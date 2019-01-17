@@ -7,6 +7,7 @@ services:
         ports:
             - "8500:8500"
             - "8300:8300"
+        entrypoint: /bin/consul   # < -- override the entry point here
         volumes:
             - ./config:/config
             - ./dhv/consul:/data
@@ -27,7 +28,21 @@ services:
             - IPC_LOCK
         environment:
           VAULT_ADDR: http://127.0.0.1:8200
-        command: server -config=/config/vault.hcl
+          VAULT_LOCAL_CONFIG: |
+            backend "consul" {
+                  address = "consul:8500"
+                  advertise_addr = "http://consul:8300"
+                  scheme = "http"
+            }
+            listener "tcp" {
+                address = "0.0.0.0:8200"
+                #tls_cert_file = "/config/server.crt"
+                #tls_key_file = "/config/server.key"
+                tls_disable = 1
+            }
+            disable_mlock = true
+        #command: server -config=/config/vault.hcl  # at some situation vault.hcl permission denied
+        command: server 
 
     webui:
         container_name: webui
@@ -40,6 +55,7 @@ services:
             NODE_TLS_REJECT_UNAUTHORIZED: 0
             VAULT_URL_DEFAULT: http://vault:8200
             VAULT_AUTH_DEFAULT: USERNAMEPASSWORD
+        command: start_app --verbose 
 
     backup:
         container_name: backup
