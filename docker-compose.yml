@@ -43,7 +43,8 @@ services:
 
     backup:
         container_name: backup
-        build: backup/
+        #build: backup/
+        image: mcchae/vault-backup
         links:
             - consul:consul
         volumes:
